@@ -191,6 +191,11 @@
     return meta;
   }
 
+  function secureAssetUrl(file) {
+    const build = secureMeta && secureMeta.build ? String(secureMeta.build) : "";
+    return "secure/" + file + (build ? "?v=" + encodeURIComponent(build) : "");
+  }
+
   async function deriveKey(passphrase, meta) {
     const raw = await window.crypto.subtle.importKey(
       "raw",
@@ -222,7 +227,7 @@
   }
 
   async function decryptPayloadWith(key) {
-    const res = await fetch("secure/" + secureMeta.file, { cache: "no-store" });
+    const res = await fetch(secureAssetUrl(secureMeta.file), { cache: "no-store" });
     if (!res.ok) throw new Error("payload-missing");
     const plain = await decryptBuffer(key, secureMeta.iv, await res.arrayBuffer());
     const payload = JSON.parse(new TextDecoder().decode(plain));
@@ -238,7 +243,7 @@
     if (imageUrls.has(entry.file)) return imageUrls.get(entry.file);
     if (!sessionKey) throw new Error("locked");
 
-    const res = await fetch("secure/" + entry.file);
+    const res = await fetch(secureAssetUrl(entry.file));
     if (!res.ok) throw new Error("image-missing");
     const plain = await decryptBuffer(sessionKey, entry.iv, await res.arrayBuffer());
     const url = URL.createObjectURL(new Blob([plain], { type: entry.mime || "image/jpeg" }));
@@ -300,7 +305,7 @@
 
   /* --------------------------- Platzhalter --------------------------- */
 
-  function fallbackImage(day) {
+  function fallbackImage(day, note) {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">' +
       '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
@@ -309,7 +314,7 @@
       '<rect width="900" height="900" fill="url(#g)"/>' +
       '<rect x="40" y="40" width="820" height="820" fill="none" stroke="#d9b06a" stroke-width="6"/>' +
       '<text x="450" y="430" text-anchor="middle" font-family="Georgia, serif" font-size="64" fill="#f2d9a3">Türchen ' + day + "</text>" +
-      '<text x="450" y="500" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="26" fill="#c9d6e2">Bild fehlt noch</text>' +
+      '<text x="450" y="500" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="26" fill="#c9d6e2">' + (note || "Bild lädt …") + "</text>" +
       "</svg>";
     return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
   }
@@ -409,7 +414,7 @@
     const token = ++detailToken;
     img.onerror = function () {
       img.onerror = null;
-      img.src = fallbackImage(day);
+      img.src = fallbackImage(day, "Bild nicht verfügbar");
     };
     img.src = fallbackImage(day);
     img.alt = "Türchen " + day + (data.title ? ": " + data.title : "");
@@ -419,7 +424,7 @@
         if (url && token === detailToken) img.src = url;
       })
       .catch(function () {
-        /* Platzhalter bleibt sichtbar */
+        if (token === detailToken) img.src = fallbackImage(day, "Bild nicht verfügbar");
       });
 
     $("hint1Text").textContent = data.hint1 || "Für dieses Türchen gibt es keinen ersten Hinweis.";

@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v7";
+const CACHE_VERSION = "advent-v8";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [
@@ -83,6 +83,18 @@ function isFreshFirst(request, url) {
   return /\.(?:html|css|js|json)$/i.test(url.pathname);
 }
 
+function cachedFallback(request) {
+  return caches.match(request).then((cached) => {
+    if (cached) return cached;
+    const url = new URL(request.url);
+    if (url.search) {
+      url.search = "";
+      return caches.match(url.href).then((plain) => plain || undefined);
+    }
+    return undefined;
+  });
+}
+
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
@@ -101,7 +113,7 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() =>
-          caches.match(request).then((cached) => {
+          cachedFallback(request).then((cached) => {
             if (cached) return cached;
             if (request.mode === "navigate") {
               return caches.match("./index.html");
@@ -114,7 +126,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
+    cachedFallback(request).then((cached) => {
       if (cached) return cached;
       return fetch(request)
         .then((response) => {

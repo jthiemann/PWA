@@ -163,6 +163,14 @@ async function main() {
     days: outDays
   };
 
+  const build = crypto
+    .createHash("sha256")
+    .update(JSON.stringify(payload))
+    .update(String(Date.now()))
+    .update(crypto.randomBytes(8))
+    .digest("hex")
+    .slice(0, 16);
+
   const meta = encrypt(Buffer.from(JSON.stringify(payload), "utf8"));
   await fs.writeFile(path.join(OUT_DIR, "meta.enc"), meta.data);
 
@@ -173,7 +181,8 @@ async function main() {
     iterations: ITERATIONS,
     salt: b64(salt),
     iv: meta.iv,
-    file: "meta.enc"
+    file: "meta.enc",
+    build
   };
   await fs.writeFile(path.join(OUT_DIR, "meta.json"), JSON.stringify(publicMeta, null, 2) + "\n");
 
