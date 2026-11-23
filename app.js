@@ -196,6 +196,14 @@
     return "secure/" + file + (build ? "?v=" + encodeURIComponent(build) : "");
   }
 
+  function imageAssetUrl(entry) {
+    if (!entry || !entry.file) return "";
+    const rev =
+      entry.rev ||
+      (secureMeta && secureMeta.build ? String(secureMeta.build) : "");
+    return "secure/" + entry.file + (rev ? "?r=" + encodeURIComponent(rev) : "");
+  }
+
   async function deriveKey(passphrase, meta) {
     const raw = await window.crypto.subtle.importKey(
       "raw",
@@ -243,7 +251,7 @@
     if (imageUrls.has(entry.file)) return imageUrls.get(entry.file);
     if (!sessionKey) throw new Error("locked");
 
-    const res = await fetch(secureAssetUrl(entry.file));
+    const res = await fetch(imageAssetUrl(entry));
     if (!res.ok) throw new Error("image-missing");
     const plain = await decryptBuffer(sessionKey, entry.iv, await res.arrayBuffer());
     const url = URL.createObjectURL(new Blob([plain], { type: entry.mime || "image/jpeg" }));

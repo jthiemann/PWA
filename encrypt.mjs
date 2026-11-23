@@ -113,9 +113,38 @@ async function main() {
 
   await fs.mkdir(IMG_DIR, { recursive: true });
 
-  // Alte verschlüsselte Bilder entfernen
-  for (const entry of await fs.readdir(IMG_DIR, { withFileTypes: true })) {
-    if (entry.isFile()) await fs.unlink(path.join(IMG_DIR, entry.name));
+  const CACHE_FILE = path.join(ROOT, ".encrypt-cache.json");
+  const keyCheck = crypto.createHash("sha256").update(key).digest("hex");
+  let cache = { version: 1, keyCheck, images: {} };
+  try {
+    const stored = JSON.parse(await fs.readFile(CACHE_FILE, "utf8"));
+    if (stored && stored.version === 1 && stored.keyCheck === keyCheck && stored.images) {
+      cache = stored;
+    }
+  } catch (err) {
+    /* noch kein Cache vorhanden */
+  }
+
+  const usedImages = new Set();
+  let reusedCount = 0;
+  let newCount = 0;
+
+  function imageRevision(hash, ivB64) {
+    return crypto
+      .createHash("sha256")
+      .update(hash + keyCheck + ivB64)
+      .digest("hex")
+      .slice(0, 12);
+  }
+
+  function decryptExisting(buffer, ivB64) {
+    const iv = Buffer.from(ivB64, "base64");
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(buffer.subarray(buffer.length - 16));
+    return Buffer.concat([
+      decipher.update(buffer.subarray(0, buffer.length - 16)),
+      decipher.final()
+    ]);
   }
 
   async function encryptImage(sourceRel, outName) {
@@ -126,9 +155,44 @@ async function main() {
     } catch (err) {
       throw new Error("Bild nicht gefunden: " + sourceRel);
     }
+
+    const hash = crypto.createHash("sha256").update(data).digest("hex");
+    const mime = mimeFor(sourceRel);
+    const outPath = path.join(IMG_DIR, outName);
+    const cached = cache.images[outName];
+
+    if (cached && cached.sourceHash === hash && cached.mime === mime) {
+      try {
+        await fs.access(outPath);
+        const existing = await fs.readFile(outPath);
+        const plain = decryptExisting(existing, cached.iv);
+        const plainHash = crypto.createHash("sha256").update(plain).digest("hex");
+        if (plainHash === hash) {
+          usedImages.add(outName);
+          reusedCount++;
+          return {
+            file: "img/" + outName,
+            iv: cached.iv,
+            mime,
+            rev: imageRevision(hash, cached.iv)
+          };
+        }
+      } catch (err) {
+        /* vorhandene Datei unbrauchbar -> neu verschlüsseln */
+      }
+    }
+
     const enc = encrypt(data);
-    await fs.writeFile(path.join(IMG_DIR, outName), enc.data);
-    return { file: "img/" + outName, iv: enc.iv, mime: mimeFor(sourceRel) };
+    await fs.writeFile(outPath, enc.data);
+    usedImages.add(outName);
+    cache.images[outName] = { sourceHash: hash, iv: enc.iv, mime };
+    newCount++;
+    return {
+      file: "img/" + outName,
+      iv: enc.iv,
+      mime,
+      rev: imageRevision(hash, enc.iv)
+    };
   }
 
   if (!config.couplePhoto) throw new Error("couplePhoto fehlt in ADVENT_CONFIG.");
@@ -149,6 +213,19 @@ async function main() {
     });
   }
   outDays.sort((a, b) => a.day - b.day);
+
+  for (const entry of await fs.readdir(IMG_DIR, { withFileTypes: true })) {
+    if (entry.isFile() && !usedImages.has(entry.name)) {
+      await fs.unlink(path.join(IMG_DIR, entry.name));
+    }
+  }
+
+  const imageCache = {};
+  for (const name of usedImages) imageCache[name] = cache.images[name];
+  await fs.writeFile(
+    CACHE_FILE,
+    JSON.stringify({ version: 1, keyCheck, images: imageCache }, null, 2) + "\n"
+  );
 
   const payload = {
     version: 1,
@@ -197,7 +274,7 @@ async function main() {
 
   console.log("secure/ aktualisiert:");
   console.log("  - meta.json, meta.enc");
-  console.log("  - " + (outDays.length + 1) + " verschlüsselte Bilder in secure/img/");
+  console.log("  - " + (outDays.length + 1) + " verschlüsselte Bilder (" + reusedCount + " wiederverwendet, " + newCount + " neu)");
   console.log("  - PBKDF2-SHA256, " + ITERATIONS + " Iterationen, AES-256-GCM");
   if (config.testMode === true) {
     console.log("");

@@ -28,6 +28,7 @@ ausgeschlossen.
 ├── images/               ★ lokale Quelle: Fotos (gitignored, README bleibt)
 ├── .passphrase           ★ lokale Passphrase (gitignored)
 ├── .salt                 ★ lokaler Salt (gitignored)
+├── .encrypt-cache.json   ★ lokaler Cache für unveränderte Bilder (gitignored)
 ├── icons/                App-Icons
 └── README.md
 ```
@@ -79,16 +80,21 @@ wird bei jedem Kaltstart nach der Passphrase gefragt.
    node encrypt.mjs
    ```
    Die Passphrase wird automatisch aus `.passphrase` gelesen.
-4. **Cache-Version erhöhen** in `sw.js` (`advent-v2` → `advent-v3`), damit
-   installierte Apps die neuen Dateien sicher übernehmen.
-5. `secure/` und `sw.js` committen und pushen.
+   Unveränderte Bilder werden wiederverwendet (Cache in
+   `.encrypt-cache.json`), sodass bei reinen Textänderungen nur `meta.enc` und
+   `meta.json` neu entstehen.
+4. `secure/` committen und pushen.
+5. `CACHE_VERSION` in `sw.js` nur erhöhen, wenn sich **App-Code, Icons,
+   `manifest.json` oder `sw.js`** geändert haben. Reine Text-/Hinweisänderungen
+   brauchen keine neue Cache-Version (die Meta-Daten werden immer frisch
+   geladen).
 
 Der Salt in `.salt` bleibt dabei gleich: Bei unveränderter Passphrase bleiben
 bereits entsperrte Geräte entsperrt. Wird die Passphrase geändert, fragt jedes
 Gerät einmal neu.
 
 **Nicht committen:** `content.js`, `images/*.png|jpg|webp`, `.passphrase`,
-`.salt`. Prüfen mit:
+`.salt`, `.encrypt-cache.json`. Prüfen mit:
 
 ```powershell
 git status --ignored
@@ -140,8 +146,8 @@ Um alle Türchen unabhängig vom Datum zu prüfen:
 
 1. In `content.js` `testMode: true` setzen.
 2. `node encrypt.mjs` ausführen und lokal testen.
-3. Vor dem Verschenken wieder auf `false` setzen, erneut verschlüsseln,
-   `CACHE_VERSION` erhöhen und pushen.
+3. Vor dem Verschenken wieder auf `false` setzen, erneut verschlüsseln und
+   pushen (bei reinen Textänderungen ist keine neue `CACHE_VERSION` nötig).
 
 Im Test-Modus zeigt die App oben einen Hinweis an.
 
@@ -150,11 +156,18 @@ Im Test-Modus zeigt die App oben einen Hinweis an.
 `index.html`, `style.css`, `app.js` und `secure/` werden vom Service Worker
 zuerst aus dem Netz geladen (mit Cache-Fallback). Nach Änderungen:
 
-1. `node encrypt.mjs` (falls Inhalte geändert),
-2. `CACHE_VERSION` in `sw.js` erhöhen,
-3. pushen,
-4. App auf dem iPhone schließen und neu öffnen. Falls das Update hartnäckig
+1. `node encrypt.mjs` (bei Text-/Bildänderungen),
+2. pushen,
+3. App auf dem iPhone schließen und neu öffnen. Falls das Update hartnäckig
    nicht ankommt: PWA vom Homescreen löschen und neu hinzufügen.
+
+Nur wenn sich **App-Code, Icons, `manifest.json` oder `sw.js`** geändert haben,
+zusätzlich `CACHE_VERSION` in `sw.js` erhöhen.
+
+Unveränderte Bilder bleiben byte-identisch (nur neue `meta.enc`/`meta.json`),
+weil `encrypt.mjs` sie über `.encrypt-cache.json` wiederverwendet. Dadurch sind
+Text-Updates sehr klein und schnell. Wird `.encrypt-cache.json` gelöscht, werden
+alle Bilder einmalig neu verschlüsselt – das ist unkritisch.
 
 ## Fehlerbehebung
 
@@ -171,7 +184,7 @@ zuerst aus dem Netz geladen (mit Cache-Fallback). Nach Änderungen:
 ## Datenschutz-Checkliste vor dem Push
 
 - [ ] `git status --ignored` zeigt `content.js`, `images/*`, `.passphrase`,
-      `.salt` als ignoriert (nicht gestaged).
+      `.salt`, `.encrypt-cache.json` als ignoriert (nicht gestaged).
 - [ ] `secure/` enthält nur `.json`, `.enc` und `.bin` – keine Klartextbilder.
 - [ ] Passphrase extern gesichert.
 - [ ] `.salt` gesichert (optional; verhindert erneute Abfragen nach Updates).

@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v9";
+const CACHE_VERSION = "advent-v10";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [

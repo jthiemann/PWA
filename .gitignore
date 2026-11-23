@@ -11,6 +11,9 @@ passphrase.txt
 # Salt für die Schlüsselableitung (lokal halten)
 .salt
 
+# Lokaler Cache: unveränderte Bilder werden wiederverwendet
+.encrypt-cache.json
+
 # System
 node_modules/
 Thumbs.db
