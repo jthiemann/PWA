@@ -934,7 +934,7 @@
 
   function applyConfig() {
     const title = cfg.title || "Adventskalender";
-    document.title = title;
+    document.title = "Adventskalender";
     const titleEl = $("appTitle");
     if (titleEl) titleEl.textContent = title;
     const subtitleEl = $("appSubtitle");

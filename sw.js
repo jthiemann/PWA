@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v2";
+const CACHE_VERSION = "advent-v3";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [
@@ -13,7 +13,9 @@ const PRECACHE = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
+  "./icons/icon-1024.png",
   "./icons/favicon-32.png",
+  "./apple-touch-icon.png",
   "./secure/meta.json",
   "./secure/meta.enc",
   "./secure/img/photo.bin",
@@ -124,3 +126,4 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
