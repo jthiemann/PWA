@@ -12,8 +12,22 @@
     subtitle: "",
     testMode: false,
     snow: true,
-    snowIntensity: 42
+    snowIntensity: 42,
+    doorOrder: null
   };
+
+  const DEFAULT_DOOR_ORDER = Array.from({ length: 24 }, (_, i) => i + 1);
+
+  function getDoorOrder() {
+    const raw = cfg.doorOrder;
+    if (!Array.isArray(raw) || raw.length !== 24) return DEFAULT_DOOR_ORDER;
+    const nums = raw.map(Number);
+    const unique = new Set(nums);
+    if (unique.size !== 24 || nums.some((n) => !Number.isInteger(n) || n < 1 || n > 24)) {
+      return DEFAULT_DOOR_ORDER;
+    }
+    return nums;
+  }
 
   const STORAGE_OPENED = "advent.opened.v1";
 
@@ -347,7 +361,9 @@
     if (!grid) return;
     const fragment = document.createDocumentFragment();
 
-    for (let day = 1; day <= 24; day++) {
+    const order = getDoorOrder();
+    for (let index = 0; index < order.length; index++) {
+      const day = order[index];
       const data = dayMap.get(day);
       const isOpen = opened.has(day);
       const unlocked = isUnlocked(day);
@@ -356,7 +372,7 @@
       btn.type = "button";
       btn.className = "door" + (isOpen ? " is-open" : "") + (!unlocked ? " is-locked" : "");
       btn.dataset.day = String(day);
-      btn.style.setProperty("--i", String(day - 1));
+      btn.style.setProperty("--i", String(index));
       btn.setAttribute(
         "aria-label",
         "Türchen " + day +
@@ -435,9 +451,31 @@
         if (token === detailToken) img.src = fallbackImage(day, "Bild nicht verfügbar");
       });
 
-    $("hint1Text").textContent = data.hint1 || "Für dieses Türchen gibt es keinen ersten Hinweis.";
-    $("hint2Text").textContent = data.hint2 || "Für dieses Türchen gibt es keinen zweiten Hinweis.";
+    const hint1 = String(data.hint1 || "").trim();
+    const hint2 = String(data.hint2 || "").trim();
+    const hint1Button = $("hint1Button");
+    const hint2Button = $("hint2Button");
+    const hint1Box = $("hint1Box");
+    const hint2Box = $("hint2Box");
+    const bothHints = Boolean(hint1 && hint2);
+    const singleHintLabel = "Hinweis";
+
+    $("hint1Text").textContent = hint1;
+    $("hint2Text").textContent = hint2;
     $("solutionText").textContent = data.solution || "Die Lösung folgt noch …";
+
+    hint1Button.hidden = !hint1;
+    hint2Button.hidden = !hint2;
+    hint1Button.textContent = bothHints ? "Hinweis 1" : singleHintLabel;
+    hint2Button.textContent = bothHints ? "Hinweis 2" : singleHintLabel;
+
+    const hint1Label = hint1Box.querySelector(".reveal-label");
+    const hint2Label = hint2Box.querySelector(".reveal-label");
+    if (hint1Label) hint1Label.textContent = bothHints ? "Hinweis 1" : singleHintLabel;
+    if (hint2Label) hint2Label.textContent = bothHints ? "Hinweis 2" : singleHintLabel;
+
+    const actions = document.querySelector(".day-actions");
+    if (actions) actions.hidden = !hint1 && !hint2;
 
     resetReveal("hint1Box", "hint1Button");
     resetReveal("hint2Box", "hint2Button");

@@ -83,6 +83,19 @@ async function loadContent() {
   return { config, days };
 }
 
+function normalizeDoorOrder(value) {
+  const fallback = Array.from({ length: 24 }, (_, i) => i + 1);
+  if (!Array.isArray(value) || value.length !== 24) return fallback;
+  const nums = value.map(Number);
+  if (
+    new Set(nums).size !== 24 ||
+    nums.some((n) => !Number.isInteger(n) || n < 1 || n > 24)
+  ) {
+    return fallback;
+  }
+  return nums;
+}
+
 async function main() {
   const passphrase = await readPassphrase();
   if (!passphrase) {
@@ -234,7 +247,8 @@ async function main() {
       subtitle: config.subtitle || "",
       testMode: config.testMode === true,
       snow: config.snow !== false,
-      snowIntensity: Number(config.snowIntensity) || 42
+      snowIntensity: Number(config.snowIntensity) || 42,
+      doorOrder: normalizeDoorOrder(config.doorOrder)
     },
     photo,
     days: outDays

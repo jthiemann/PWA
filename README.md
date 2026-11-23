@@ -71,7 +71,9 @@ wird bei jedem Kaltstart nach der Passphrase gefragt.
 ## Inhalte austauschen
 
 1. **Texte:** `content.js` bearbeiten (`title`, `riddle`, `hint1`, `hint2`,
-   `solution`, …).
+   `solution`, …). `hint1` und `hint2` dürfen leer bleiben (`""`) – dann wird
+   der jeweilige Hinweis-Button automatisch ausgeblendet; es genügt also auch
+   nur ein Hinweis.
 2. **Bilder:** Fotos in `images/` ersetzen. Am einfachsten gleiche Dateinamen
    verwenden (`photo-couple.png`, `day-01.png` … `day-24.png`). Bei anderem
    Namen/Format den Pfad in `content.js` anpassen.
@@ -88,6 +90,14 @@ wird bei jedem Kaltstart nach der Passphrase gefragt.
    `manifest.json` oder `sw.js`** geändert haben. Reine Text-/Hinweisänderungen
    brauchen keine neue Cache-Version (die Meta-Daten werden immer frisch
    geladen).
+
+### Türchen-Reihenfolge
+
+In `content.js` legt `doorOrder` die Reihenfolge im Raster fest – eine feste
+Permutation aller Zahlen 1–24. Die Türchen stehen dadurch nicht in der
+Reihenfolge 1 → 24, die Datumsprüfung gilt aber weiterhin pro Türchen-Nummer.
+Die Reihenfolge bleibt unverändert, solange `doorOrder` nicht angepasst wird.
+Jede Zahl muss genau einmal vorkommen.
 
 Der Salt in `.salt` bleibt dabei gleich: Bei unveränderter Passphrase bleiben
 bereits entsperrte Geräte entsperrt. Wird die Passphrase geändert, fragt jedes
