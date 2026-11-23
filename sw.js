@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v8";
+const CACHE_VERSION = "advent-v9";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [
@@ -9,15 +9,21 @@ const PRECACHE = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./manifest.json?v=4",
+  "./manifest.json?v=9",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
   "./icons/icon-1024.png",
   "./icons/favicon-32.png",
+  "./icons/icon-192.png?v=9",
+  "./icons/icon-512.png?v=9",
+  "./icons/icon-512-maskable.png?v=9",
+  "./icons/icon-1024.png?v=9",
+  "./icons/favicon-32.png?v=9",
   "./apple-touch-icon.png",
-  "./apple-touch-icon-v3.png",
+  "./apple-touch-icon-v9.png",
+  "./apple-touch-icon-v9.png?v=9",
   "./secure/meta.json",
   "./secure/meta.enc",
   "./secure/img/photo.bin",
@@ -87,7 +93,7 @@ function cachedFallback(request) {
   return caches.match(request).then((cached) => {
     if (cached) return cached;
     const url = new URL(request.url);
-    if (url.search) {
+    if (url.search && url.pathname.indexOf("/secure/") !== -1) {
       url.search = "";
       return caches.match(url.href).then((plain) => plain || undefined);
     }
