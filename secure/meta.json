@@ -4,6 +4,6 @@
   "kdf": "PBKDF2-SHA256",
   "iterations": 600000,
   "salt": "qk9RuFNUpWjh+Nprn8MJdw==",
-  "iv": "J8rLxbVAXsOr/xHv",
+  "iv": "iwfYy69VIshkSfMh",
   "file": "meta.enc"
 }
