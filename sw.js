@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v3";
+const CACHE_VERSION = "advent-v4";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [
@@ -16,6 +16,7 @@ const PRECACHE = [
   "./icons/icon-1024.png",
   "./icons/favicon-32.png",
   "./apple-touch-icon.png",
+  "./apple-touch-icon-v3.png",
   "./secure/meta.json",
   "./secure/meta.enc",
   "./secure/img/photo.bin",
