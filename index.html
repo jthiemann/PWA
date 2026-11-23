@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>Adventskalender</title>
+  <meta name="description" content="Ein persönlicher Adventskalender mit 24 kleinen Momenten.">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+
+  <meta name="theme-color" content="#08121e">
+  <meta name="color-scheme" content="dark">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Adventskalender">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="snow-layer" aria-hidden="true">
+    <canvas id="snowCanvas"></canvas>
+  </div>
+
+  <!-- ============ ENTSPERREN (Passphrase) ============ -->
+  <section id="unlockScreen" class="pin-screen is-hidden" aria-labelledby="unlockHeading">
+    <form class="pin-card" id="unlockForm" novalidate>
+      <div class="pin-lock" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="10" width="16" height="11" rx="2.5"></rect>
+          <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+          <circle cx="12" cy="15.5" r="1.3" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </div>
+      <h1 id="unlockHeading">Dein Kalender</h1>
+      <p class="pin-sub" id="unlockHint">Gib deine Passphrase ein, um die 24 Türchen zu entschlüsseln.</p>
+
+      <label class="visually-hidden" for="passphraseInput">Passphrase</label>
+      <input id="passphraseInput" class="pin-input pin-input-pass" type="password"
+             autocomplete="current-password" autocapitalize="none" autocorrect="off"
+             spellcheck="false" placeholder="Passphrase" required>
+
+      <label class="remember-row" for="rememberDevice">
+        <input id="rememberDevice" type="checkbox" checked>
+        <span>Auf diesem Gerät merken</span>
+      </label>
+
+      <p class="pin-error" id="unlockError" role="alert" hidden></p>
+      <button class="btn btn-gold" id="unlockButton" type="submit">Kalender entsperren</button>
+      <p class="pin-foot">Ohne Passphrase bleiben die Inhalte verschlüsselt.</p>
+    </form>
+  </section>
+
+  <!-- ============ HAUPTANSICHT: KALENDER ============ -->
+  <main id="calendarScreen" class="screen is-hidden">
+    <header class="app-header">
+      <div class="photo-frame">
+        <img id="couplePhoto" alt="Unser Foto" width="400" height="400">
+      </div>
+      <h1 id="appTitle" class="app-title">Adventskalender</h1>
+      <p id="appSubtitle" class="app-subtitle"></p>
+      <p id="todayStatus" class="today-status"></p>
+    </header>
+
+    <section class="door-grid" id="doorGrid" aria-label="Die 24 Türchen"></section>
+
+    <footer class="app-footer">
+      <p>Mit Liebe gemacht · <span id="footerYear">2026</span></p>
+    </footer>
+  </main>
+
+  <!-- ============ DETAILANSICHT: EIN TÜRCHEN ============ -->
+  <main id="detailScreen" class="screen detail-screen is-hidden">
+    <button id="backButton" class="back-button" type="button">
+      <span aria-hidden="true">←</span> Zurück zum Kalender
+    </button>
+
+    <article class="day-card" id="dayCard">
+      <p class="day-eyebrow" id="dayEyebrow">Türchen 1</p>
+      <h2 class="day-title" id="dayTitle">Titel</h2>
+      <p class="day-date" id="dayDate">1. Dezember</p>
+
+      <figure class="day-figure">
+        <img id="dayImage" alt="" width="900" height="900">
+      </figure>
+
+      <p class="day-riddle" id="riddleText"></p>
+
+      <div class="day-actions">
+        <button class="btn btn-outline" id="hint1Button" type="button" aria-expanded="false" aria-controls="hint1Box">
+          Hinweis 1
+        </button>
+        <button class="btn btn-outline" id="hint2Button" type="button" aria-expanded="false" aria-controls="hint2Box">
+          Hinweis 2
+        </button>
+      </div>
+
+      <div class="reveal hint-box" id="hint1Box" hidden>
+        <p class="reveal-label">Hinweis 1</p>
+        <p id="hint1Text"></p>
+      </div>
+      <div class="reveal hint-box" id="hint2Box" hidden>
+        <p class="reveal-label">Hinweis 2</p>
+        <p id="hint2Text"></p>
+      </div>
+
+      <button class="btn btn-gold btn-solution" id="solutionButton" type="button" aria-expanded="false" aria-controls="solutionBox">
+        Lösung anzeigen
+      </button>
+
+      <div class="reveal solution-box" id="solutionBox" hidden>
+        <p class="reveal-label">Lösung</p>
+        <p id="solutionText"></p>
+      </div>
+    </article>
+  </main>
+
+  <!-- ============ MODAL: VERFRÜHTER KLICK ============ -->
+  <div class="modal" id="earlyModal" role="dialog" aria-modal="true" aria-labelledby="earlyModalTitle" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card">
+      <div class="modal-icon" aria-hidden="true">🎁</div>
+      <h2 id="earlyModalTitle">Nicht so schnell!</h2>
+      <p id="earlyModalText"></p>
+      <button class="btn btn-gold" id="earlyModalClose" type="button">Na gut, ich warte</button>
+    </div>
+  </div>
+
+  <noscript>
+    <p class="noscript-note">Bitte aktiviere JavaScript, damit dein Adventskalender funktioniert.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>

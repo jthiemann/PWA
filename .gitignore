@@ -1,0 +1,17 @@
+# Unverschlüsselte Originale – NIEMALS veröffentlichen
+content.js
+images/*
+!images/README.md
+
+# Passphrase – NIEMALS veröffentlichen
+.passphrase
+*.passphrase
+passphrase.txt
+
+# Salt für die Schlüsselableitung (lokal halten)
+.salt
+
+# System
+node_modules/
+Thumbs.db
+.DS_Store
