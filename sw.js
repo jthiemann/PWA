@@ -1,6 +1,6 @@
 /* Service Worker – Offline-Unterstützung für den Adventskalender */
 
-const CACHE_VERSION = "advent-v4";
+const CACHE_VERSION = "advent-v5";
 const CACHE_NAME = CACHE_VERSION;
 
 const PRECACHE = [
@@ -9,6 +9,7 @@ const PRECACHE = [
   "./style.css",
   "./app.js",
   "./manifest.json",
+  "./manifest.json?v=4",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
