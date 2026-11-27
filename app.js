@@ -742,6 +742,19 @@
     screen.classList.remove("is-hidden");
     if (error) error.hidden = true;
 
+    if (kind === "file") {
+      if (hint) {
+        hint.textContent =
+          "Bitte die Datei nicht per Doppelklick öffnen. Starte im Projektordner „npx serve .“ und öffne http://localhost:3000.";
+      }
+      if (input) input.disabled = true;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Lokalen Server starten";
+      }
+      return;
+    }
+
     if (kind === "missing") {
       if (hint) {
         hint.textContent =
@@ -758,7 +771,7 @@
     if (kind === "insecure") {
       if (hint) {
         hint.textContent =
-          "Bitte öffne den Kalender über HTTPS. Die verschlüsselten Inhalte benötigen einen sicheren Kontext.";
+          "Bitte über HTTPS oder http://localhost öffnen. Auf dem Handy im WLAN funktioniert eine http://-IP nicht – nutze die Live-Seite oder einen HTTPS-Tunnel.";
       }
       if (input) input.disabled = true;
       if (button) {
@@ -871,6 +884,11 @@
     applyBaseUI();
     initEvents();
     registerServiceWorker();
+
+    if (window.location.protocol === "file:") {
+      showUnlock("file");
+      return;
+    }
 
     if (!window.crypto || !window.crypto.subtle) {
       showUnlock("insecure");
